@@ -1,0 +1,33 @@
+#!/bin/bash
+
+for str
+do
+    var=$1  #pernaei to onoma tou arxeio stin metavliti var
+    shift   #paei sto epomeno arxeio
+
+    [ -e temp ] && rm temp
+    touch temp
+
+    exec< "$var"
+    while IFS=':' read -r col1 col2
+    do	
+        printf "%s\n" $col2>>temp
+    done 
+    IFS="$old_ifs"
+
+    max=-100000 #arxikopoiw se ena polu mikro max gia na parei sigoura ena neo kata tin ektelesi
+    exec< temp
+    while IFS='!' read -r col1 col2
+    do	
+        let diff=col1-col2
+        if [ "$diff" -gt "$max" ]
+        then
+            let max=diff
+        fi
+    done 
+    IFS="$old_ifs"
+
+    echo $max
+
+
+done

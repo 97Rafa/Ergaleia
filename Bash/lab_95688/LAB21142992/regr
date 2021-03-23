@@ -1,0 +1,40 @@
+#!/bin/bash
+echo FileList = $* #ektupwnei ta onomata twn arxeiwn poy dinontai san orismata
+echo ----------
+for str  # prints OK even with change
+do
+var=$1  #pernaei to onoma tou arxeio stin metavliti var
+shift   #paei sto epomeno arxeio
+sum_x=0
+sum_y=0
+sum_xy=0
+sum_x2=0
+a=0
+b=0
+err=0
+length=0
+
+exec< "$var"  #anoigei to "var" arxeio
+
+while IFS=':' read -r col1 col2    #xwrizei tin kathe grammi me simeio anaforas to ":" se 2 columns
+do 
+    sum_x=$(echo "scale=2; ($sum_x + ${col1})" | bc)	#sum_x=Σ x(i) me akriveia 2 dekadikwn
+    sum_y=$(echo "scale=2; ($sum_y + ${col2})" | bc)	#sum_y=Σ y(i) me akriveia 2 dekadikwn
+    length=$((length + 1)) #length++
+done 
+
+sum_xy=$(echo "scale=2; ($sum_x * $sum_y)" | bc) #sum_xy=sum_x * sum_y me akriveia 2 dekadikwn
+sum_x2=$(echo "scale=2; ($sum_x * $sum_x)" | bc) #sum_x2=sum_x * sum_x me akriveia 2 dekadikwn
+a=$(echo "scale=2; (($length * $sum_xy - $sum_x * $sum_y) / ($length * $sum_x2 - $sum_x * $sum_x))" | bc)
+b=$(echo "scale=2; (($sum_y - $a * $sum_x) / ($length))" | bc)
+
+exec< "$var"
+while IFS=':' read -r col1 col2
+do 
+    err=$(echo "scale=2;  (${col2} - ($a * ${col1} + $b) * ($a * ${col1} + $b))" | bc)
+done 
+
+echo FILE:"$var", a=$a b=$b c=1 err=$err
+done
+exit 0
+

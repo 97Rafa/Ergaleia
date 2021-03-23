@@ -1,0 +1,99 @@
+#!/bin/bash
+[ -e points.txt ] && rm points.txt
+[ -e pointssorted.txt ] && rm pointssorted.txt
+[ -e temp.txt ] && rm temp.txt
+[ -e leaderboard.txt ] && rm leaderboard.txt
+cp "$1" temp.txt
+
+sed -i 's/:/-/g' temp.txt #antikatastei to ":" me to "-"
+old_ifs="$IFS"
+exec<temp.txt
+while IFS='-' read -r col1 col2 col3 col4    #xwrizei tin kathe grammi me simeio anaforas to "-" se 2 columns
+do
+	touch points.txt
+	if [ "${col3}" -gt "${col4}" ]
+	then
+		echo "${col1} 3 ${col3} ${col4}"  >> points.txt
+		echo "${col2} 0 ${col4} ${col3}"  >> points.txt
+    elif [ "${col3}" -lt "${col4}" ]
+	then
+		echo "${col1} 0 ${col3} ${col4}"  >> points.txt
+		echo "${col2} 3 ${col4} ${col3}"  >> points.txt
+	else
+		echo "${col1} 1 ${col3} ${col4}"  >> points.txt
+		echo "${col2} 1 ${col4} ${col3}"  >> points.txt
+
+	fi
+
+done 
+IFS="$old_ifs"
+sort -r -o  pointssorted.txt points.txt
+
+#rm points.txt
+#old_ifs="$IFS"
+#exec<pointssorted.txt
+#while IFS=' ' read -r col1 col2    #xwrizei tin kathe grammi me simeio anaforas to "-" se 2 columns
+#do
+
+#echo team="${col1}"
+#echo x="${col2}"
+prev=""
+games=0
+phase=0
+totalpoints=0
+goalsact=0
+goalspass=0
+for str in `cat pointssorted.txt`
+do
+if [ "$phase" -eq "0" ]
+then
+	if [ "${str}" != "$prev" ]
+	then
+		if [ ! -z $prev ] 
+	    then
+	      	echo "$totalpoints/${prev}/${games}/$goalsact/$goalspass" >> leaderboard.txt
+	    fi
+	    totalpoints=0
+	    goalsact=0
+		goalspass=0
+	    prev=${str}
+	    games=1
+	else
+		let "games = games + 1"
+	fi
+elif [ "$phase" -eq "1" ]
+then
+let "totalpoints= totalpoints + ${str}"
+elif [ "$phase" -eq "2" ]
+then
+	let "goalsact = goalsact + ${str}"
+elif [ "$phase" -eq "3" ]
+then
+	let "goalspass = goalspass + ${str}"
+fi
+let "phase = (phase + 1) % 4"
+done
+
+if [ ! -z $prev ]
+then
+echo "$totalpoints/${prev}/${games}/$goalsact/$goalspass" >> leaderboard.txt
+fi
+
+sort -k1,1nr -k2 leaderboard.txt >> finally.txt
+
+old_ifs="$IFS"
+counter=1
+exec<finally.txt
+while IFS='/' read -r col1 col2 col3 col4 col5  #xwrizei tin kathe grammi me simeio anaforas to "/" se 2 columns
+do
+	echo -e "$counter". '\t' "${col2}" '\t'	"${col1}" '\t'	"${col4}"-"${col5}"		
+	let "counter = counter + 1"
+
+done 
+IFS="$old_ifs"
+
+[ -e points.txt ] && rm points.txt
+[ -e pointssorted.txt ] && rm pointssorted.txt
+[ -e temp.txt ] && rm temp.txt
+[ -e leaderboard.txt ] && rm leaderboard.txt
+[ -e finally.txt ] && rm finally.txt

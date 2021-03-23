@@ -1,0 +1,33 @@
+#!/bin/bash
+
+file=$1
+N=$2
+[ -e nfile ] && rm nfile
+touch nfile
+head -"$N" "$file" >> nfile
+
+[ -e temp ] && rm temp
+touch temp
+
+exec< nfile
+while IFS='!' read -r col1 col2
+do	
+    printf "%s\n" $col2>>temp
+done 
+IFS="$old_ifs"
+
+max_prod=0
+temp_var=0
+exec< temp
+while IFS=':' read -r col1 col2
+do	
+    let temp_var=col1*col2
+    if [ "$temp_var" -gt "$max_prod" ]
+    then
+        let max_prod=temp_var
+    fi 
+done 
+IFS="$old_ifs"
+
+echo $max_prod
+
